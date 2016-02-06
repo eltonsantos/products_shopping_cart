@@ -1,5 +1,4 @@
 class CartItemsController < ApplicationController
-  before_action :set_cart_item, only: [:show, :edit, :update, :destroy]
 
   # GET /cart_items
   # GET /cart_items.json
@@ -40,35 +39,33 @@ class CartItemsController < ApplicationController
   # PATCH/PUT /cart_items/1
   # PATCH/PUT /cart_items/1.json
   def update
-    respond_to do |format|
-      if @cart_item.update(cart_item_params)
-        format.html { redirect_to @cart_item, notice: 'Cart item was successfully updated.' }
-        format.json { render :show, status: :ok, location: @cart_item }
-      else
-        format.html { render :edit }
-        format.json { render json: @cart_item.errors, status: :unprocessable_entity }
-      end
+    @cart = current_cart
+    @item = @cart.cart_items.find_by(product_id: params[:id])
+    if @item.product.quantity >= item_params[:quantity].to_i
+      @item.update(item_params)
+      flash[:notice] = "Updated!"
+    else
+      flash[:warning] = "Could not update."
     end
+
+    redirect_to carts_path
   end
 
   # DELETE /cart_items/1
   # DELETE /cart_items/1.json
   def destroy
-    @cart_item.destroy
-    respond_to do |format|
-      format.html { redirect_to cart_items_url, notice: 'Cart item was successfully destroyed.' }
-      format.json { head :no_content }
-    end
+    @cart = current_cart
+    @item = @cart.find_cart_item(params[:id])
+    @product = @item.product
+    @item.destroy
+    flash[:warning] = "#{@product.name} removed with success!"
+    redirect_to :back
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_cart_item
-      @cart_item = CartItem.find(params[:id])
-    end
 
     # Never trust parameters from the scary internet, only allow the white list through.
-    def cart_item_params
+    def item_params
       params.require(:cart_item).permit(:product_id, :cart_id, :quantity)
     end
 end
